@@ -18,9 +18,24 @@ const wss = new WebSocket.Server({ server });
 wss.on('connection', (ws: WebSocket) => {
     ws.on('message', (message: string) => {
         console.log(`message recieved: ${message}`);
-        ws.send(`message sent: ${message}`);
+
+        const broadcastRegex = /^broadcast\:/;
+
+        if (broadcastRegex.test(message)) {
+            message = message.replace(broadcastRegex, '');
+            wss.clients
+                .forEach(client => {
+                    if (client != ws) {
+                        client.send(`broadcase message: ${message}`);
+                    }
+                });
+        } else {
+            ws.send(`message sent: ${message}`);
+        }
     });
     ws.send('Hi there I am a WebSocket server');
 });
 
-console.log("just checking...")
+server.listen(process.env.PORT || 8999, () => {
+    console.log(`Server started on port 8999`);
+});
